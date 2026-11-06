@@ -1,19 +1,49 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
+import { FormDesignerPage } from './admin/forms/FormDesignerPage';
+import { FormListPage } from './admin/forms/FormListPage';
+import { CreateTablePage } from './admin/tables/CreateTablePage';
+import { TableDetailPage } from './admin/tables/TableDetailPage';
+import { TableListPage } from './admin/tables/TableListPage';
+import { ChangePasswordPage } from './auth/change-password/ChangePasswordPage';
+import { ForgotPasswordPage } from './auth/forgot-password/ForgotPasswordPage';
 import { LoginPage } from './auth/LoginPage';
+import { ResetPasswordPage } from './auth/reset-password/ResetPasswordPage';
+import CrmDashboard from './CrmDashboard';
+import { Customer360Page } from './customer/Customer360Page';
+import { Customer360SelectorPage } from './customer/Customer360SelectorPage';
 import { DashboardPage } from './dashboard/DashboardPage';
+import { AdminDashboardPage } from './identity/admin/AdminDashboardPage';
+import { AuditPage } from './identity/admin/audit/AuditPage';
+import { BranchesAdminPage } from './identity/admin/branches/BranchesAdminPage';
+import { CompaniesAdminPage } from './identity/admin/companies/CompaniesAdminPage';
+import { DepartmentsAdminPage } from './identity/admin/departments/DepartmentsAdminPage';
+import { OrganizationsAdminPage } from './identity/admin/organizations/OrganizationsAdminPage';
+import { PermissionsAdminPage } from './identity/admin/permissions/PermissionsAdminPage';
+import { RolesAdminPage } from './identity/admin/roles/RolesAdminPage';
+import { SessionsAdminPage } from './identity/admin/sessions/SessionsAdminPage';
+import { TenantsAdminPage } from './identity/admin/tenants/TenantsAdminPage';
+import { UsersAdminPage } from './identity/admin/users/UsersAdminPage';
+import { ContextSelectPage } from './identity/context/ContextSelectPage';
+import { PreferencesPage } from './identity/preferences/PreferencesPage';
+import { ProfilePage } from './identity/profile/ProfilePage';
+import { SessionsPage } from './identity/sessions/SessionsPage';
 import { RuntimePage } from './runtime/RuntimePage';
+import { WindowPage } from './window/WindowPage';
 
+import { AdminRoute } from '@/core/router/guards/AdminRoute';
+import { AuthGuard } from '@/core/router/guards/AuthGuard';
+import { ContextGuard } from '@/core/router/guards/ContextGuard';
 import { GuestRoute } from '@/core/router/guards/GuestRoute';
 import { ProtectedRoute } from '@/core/router/guards/ProtectedRoute';
 
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Public redirect to dashboard */}
+      {/* Public redirect */}
       <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
 
-      {/* Guest only routes (unauthenticated) */}
+      {/* Guest only routes */}
       <Route
         path="/login"
         element={
@@ -22,51 +52,116 @@ export function AppRoutes() {
           </GuestRoute>
         }
       />
+      <Route
+        path="/forgot-password"
+        element={
+          <GuestRoute>
+            <ForgotPasswordPage />
+          </GuestRoute>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <GuestRoute>
+            <ResetPasswordPage />
+          </GuestRoute>
+        }
+      />
 
-      {/* Protected routes (requires auth, renders AppLayout shell) */}
+      {/* Standalone context selection (no sidebar/header) */}
+      <Route
+        path="/select-context"
+        element={
+          <AuthGuard>
+            <ContextSelectPage />
+          </AuthGuard>
+        }
+      />
+
+      {/* Protected routes — context selection required before access */}
       <Route path="/app" element={<ProtectedRoute />}>
-        <Route index element={<Navigate to="/app/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route
-          path="products"
-          element={
-            <div style={{ padding: 24 }}>
-              <h3>Products Module</h3>
-              <p>Coming Soon...</p>
-            </div>
-          }
-        />
-        <Route
-          path="orders"
-          element={
-            <div style={{ padding: 24 }}>
-              <h3>Orders Module</h3>
-              <p>Coming Soon...</p>
-            </div>
-          }
-        />
-        <Route
-          path="users"
-          element={
-            <div style={{ padding: 24 }}>
-              <h3>Users Module</h3>
-              <p>Coming Soon...</p>
-            </div>
-          }
-        />
-        <Route
-          path="settings"
-          element={
-            <div style={{ padding: 24 }}>
-              <h3>Settings Module</h3>
-              <p>Coming Soon...</p>
-            </div>
-          }
-        />
-        <Route path="runtime" element={<RuntimePage />} />
+        <Route element={<ContextGuard />}>
+          <Route index element={<Navigate to="/app/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+
+          {/* Identity user pages */}
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="preferences" element={<PreferencesPage />} />
+          <Route path="change-password" element={<ChangePasswordPage />} />
+          <Route path="sessions" element={<SessionsPage />} />
+
+          {/* Identity admin pages (admin role required) */}
+          <Route path="admin" element={<AdminRoute />}>
+            <Route index element={<AdminDashboardPage />} />
+            <Route path="tenants" element={<TenantsAdminPage />} />
+            <Route path="organizations" element={<OrganizationsAdminPage />} />
+            <Route path="companies" element={<CompaniesAdminPage />} />
+            <Route path="branches" element={<BranchesAdminPage />} />
+            <Route path="departments" element={<DepartmentsAdminPage />} />
+            <Route path="users" element={<UsersAdminPage />} />
+            <Route path="roles" element={<RolesAdminPage />} />
+            <Route path="permissions" element={<PermissionsAdminPage />} />
+            <Route path="sessions" element={<SessionsAdminPage />} />
+            <Route path="audit" element={<AuditPage />} />
+            {/* Table Designer routes */}
+            <Route path="tables" element={<TableListPage />} />
+            <Route path="tables/create" element={<CreateTablePage />} />
+            <Route path="tables/:tableId" element={<TableDetailPage />} />
+            {/* Form Designer routes */}
+            <Route path="forms" element={<FormListPage />} />
+            <Route path="forms/:formId" element={<FormDesignerPage />} />
+          </Route>
+
+          {/* Legacy placeholders */}
+          <Route
+            path="products"
+            element={
+              <div style={{ padding: 24 }}>
+                <h3>Products Module</h3>
+                <p>Coming Soon...</p>
+              </div>
+            }
+          />
+          <Route
+            path="orders"
+            element={
+              <div style={{ padding: 24 }}>
+                <h3>Orders Module</h3>
+                <p>Coming Soon...</p>
+              </div>
+            }
+          />
+          <Route
+            path="users"
+            element={
+              <div style={{ padding: 24 }}>
+                <h3>Users Module</h3>
+                <p>Coming Soon...</p>
+              </div>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <div style={{ padding: 24 }}>
+                <h3>Settings Module</h3>
+                <p>Coming Soon...</p>
+              </div>
+            }
+          />
+          <Route path="runtime" element={<RuntimePage />} />
+          <Route path="window/:windowName" element={<WindowPage />} />
+          <Route path="customer-360" element={<Customer360SelectorPage />} />
+          <Route path="customer-360/:partnerId" element={<Customer360Page />} />
+          <Route path="crm-dashboard" element={<CrmDashboard />} />
+        </Route>
       </Route>
 
-      {/* Fallback route */}
+      {/* Legacy /runtime redirect — redirect /runtime/sales_order to /window/sales_order */}
+      <Route path="/runtime/:formCode" element={<Navigate to="/window/:formCode" replace />} />
+
+      {/* Fallback */}
       <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
     </Routes>
   );

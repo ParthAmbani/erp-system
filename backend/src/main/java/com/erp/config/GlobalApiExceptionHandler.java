@@ -4,8 +4,12 @@ import com.erp.common.api.ApiErrorDetail;
 import com.erp.common.api.ApiResponse;
 import com.erp.core.metadata.exception.MetadataNotFoundException;
 import com.erp.core.metadata.exception.MetadataValidationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataAccessException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -16,6 +20,8 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalApiExceptionHandler {
+
+  private static final Logger log = LoggerFactory.getLogger(GlobalApiExceptionHandler.class);
 
   @ExceptionHandler(MetadataNotFoundException.class)
   public ResponseEntity<ApiResponse<Void>> handleMetadataNotFound(MetadataNotFoundException exception) {
@@ -41,6 +47,12 @@ public class GlobalApiExceptionHandler {
         .body(ApiResponse.error("VALIDATION_ERROR", exception.getMessage()));
   }
 
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException exception) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        .body(ApiResponse.error("ACCESS_DENIED", exception.getMessage()));
+  }
+
   @ExceptionHandler(MethodArgumentTypeMismatchException.class)
   public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException exception) {
     String message = String.format("Invalid value '%s' for parameter '%s'.", exception.getValue(), exception.getName());
@@ -58,8 +70,22 @@ public class GlobalApiExceptionHandler {
         .body(ApiResponse.error("VALIDATION_FAILED", "One or more fields failed validation.", details));
   }
 
+  @ExceptionHandler(DataAccessException.class)
+  public ResponseEntity<ApiResponse<Void>> handleDataAccess(DataAccessException exception) {
+    log.error("Database error: {}", exception.getMessage(), exception);
+    String message = "A database error occurred. Please check your data and try again.";
+    // Extract the most useful part of the error message
+    Throwable cause = exception.getMostSpecificCause();
+    if (cause != null && cause.getMessage() != null) {
+      message = cause.getMessage();
+    }
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+        .body(ApiResponse.error("DATABASE_ERROR", message));
+  }
+
   @ExceptionHandler(Exception.class)
   public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception exception) {
+    log.error("Unhandled exception: {}", exception.getMessage(), exception);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
         .body(ApiResponse.error("INTERNAL_ERROR", "Unexpected error occurred. Please contact support."));
   }

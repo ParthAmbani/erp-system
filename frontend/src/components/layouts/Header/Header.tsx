@@ -1,17 +1,20 @@
-import { Menu as MenuIcon, Brightness4, Brightness7, Logout } from '@mui/icons-material';
+import { Menu as MenuIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import {
   AppBar,
   Toolbar,
   IconButton,
   Typography,
   Box,
+  Tooltip,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 
-import { useTheme as useAppTheme } from '@/app/providers/ThemeProvider';
-import { selectCurrentUser } from '@/core/auth/authSelectors';
-import { useAuthStore } from '@/core/auth/authStore';
+import { UserMenu } from './UserMenu';
+
+import { FormSearchBar } from '@/core/runtime/components/FormSearchBar';
+import { ContextSwitcher } from '@/modules/identity/context/ContextSwitcher';
 
 type HeaderProps = {
   onMobileMenuToggle?: () => void;
@@ -20,11 +23,8 @@ type HeaderProps = {
 
 export function Header({ onMobileMenuToggle, title = 'ERP System' }: HeaderProps) {
   const theme = useTheme();
-  const { mode, toggleTheme } = useAppTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
-  const user = useAuthStore(selectCurrentUser);
-  const logout = useAuthStore((state) => state.logout);
+  const queryClient = useQueryClient();
 
   return (
     <AppBar
@@ -48,37 +48,26 @@ export function Header({ onMobileMenuToggle, title = 'ERP System' }: HeaderProps
             <MenuIcon />
           </IconButton>
         )}
-
-        <Typography
-          variant="h6"
-          noWrap
-          component="div"
-          sx={{
-            flexGrow: 1,
-            fontWeight: 600,
-            color: theme.palette.text.primary,
-          }}
-        >
+        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
           {title}
         </Typography>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          {user && !isMobile && (
-            <Typography
-              variant="body2"
-              sx={{ mr: 1, fontWeight: 600, color: theme.palette.text.secondary }}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Tooltip title="Refresh all data (menu, definitions, records)">
+            <IconButton
+              color="inherit"
+              onClick={() => {
+                queryClient.invalidateQueries({ queryKey: ['runtime', 'menu'] });
+                queryClient.invalidateQueries({ queryKey: ['window-definition'] });
+                queryClient.invalidateQueries({ queryKey: ['window-records'] });
+                queryClient.invalidateQueries({ queryKey: ['window-record'] });
+              }}
             >
-              {user.username} ({user.roles[0]})
-            </Typography>
-          )}
-          <IconButton color="inherit" onClick={toggleTheme} aria-label="toggle theme">
-            {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
-          </IconButton>
-          {user && (
-            <IconButton color="error" onClick={logout} aria-label="logout" size="medium">
-              <Logout fontSize="small" />
+              <RefreshIcon />
             </IconButton>
-          )}
+          </Tooltip>
+          <FormSearchBar />
+          <ContextSwitcher />
+          <UserMenu />
         </Box>
       </Toolbar>
     </AppBar>
